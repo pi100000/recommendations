@@ -4,31 +4,36 @@ const Company = require('../models/searchModel')
 const searches = require('../models/searchModel')
 
 const setSearch = asyncHandler(async (req, res) => {
-    let ress = req.body.key
-    console.log(ress)
-
     try {
-        const ads = await searches.aggregate([
-            {$match : {$text : { $search : ress }}},
-
-            {$lookup : {
-            from: "company",
-            localField: "companyId",
-            foreignField: "companyId",
-            as: "common"
-            }}, 
-
-            {$project : {
-            common: {
-              companyName: 1,
-              url: 1
-            }, 
-            primaryText: 1,
-            headline: 1,
-            description: 1,
-            cta: 1,
-            image: 1
-          }}])
+        const ads = await searches.aggregate([ 
+                { $match : 
+                    {
+                        $or: [
+                            {headline:{ $regex:  req.body.key, $options: 'i'}},
+                            {description:{ $regex:  req.body.key, $options: 'i'}},
+                            {primaryKey:{ $regex:  req.body.key, $options: 'i'}}
+                        ]
+                    }
+                },
+                {$lookup : {
+                    from: "company",
+                    localField: "companyId",
+                    foreignField: "companyId",
+                    as: "common"
+                    }},
+                {$project : {
+                        common: {
+                          companyName: 1,
+                          url: 1
+                        }, 
+                        primaryText: 1,
+                        headline: 1,
+                        description: 1,
+                        cta: 1,
+                        image: 1
+                    }}
+            ])
+        
         return res.json(ads)
     } catch (err) {
         console.error(err)
