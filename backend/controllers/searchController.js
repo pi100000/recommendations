@@ -6,21 +6,22 @@ const searches = require('../models/searchModel')
 const setSearch = asyncHandler(async (req, res) => {
     try {
         const ads = await searches.aggregate([ 
-                { $match : 
-                    {
-                        $or: [
-                            {headline:{ $regex:  req.body.key, $options: 'i'}},
-                            {description:{ $regex:  req.body.key, $options: 'i'}},
-                            {primaryKey:{ $regex:  req.body.key, $options: 'i'}}
-                        ]
-                    }
-                },
                 {$lookup : {
                     from: "company",
                     localField: "companyId",
                     foreignField: "companyId",
                     as: "common"
                     }},
+                    { $match : 
+                        {
+                            $or: [
+                                {headline:{ $regex:  req.body.key, $options: 'i'}},
+                                {description:{ $regex:  req.body.key, $options: 'i'}},
+                                {primaryKey:{ $regex:  req.body.key, $options: 'i'}},
+                                {"common.companyName":{ $regex:  req.body.key, $options: 'i'}}
+                            ]
+                        }
+                    },
                 {$project : {
                         common: {
                           companyName: 1,
@@ -32,6 +33,7 @@ const setSearch = asyncHandler(async (req, res) => {
                         cta: 1,
                         image: 1
                     }}
+
             ])
         
         return res.json(ads)
